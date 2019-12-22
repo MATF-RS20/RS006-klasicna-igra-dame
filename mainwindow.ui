@@ -36,13 +36,13 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="page">
      <widget class="QPushButton" name="btnLocalMultiplayer">
       <property name="geometry">
        <rect>
-        <x>162</x>
+        <x>160</x>
         <y>20</y>
         <width>131</width>
         <height>28</height>
@@ -50,6 +50,19 @@
       </property>
       <property name="text">
        <string>Lokalni (multi)plejer</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btnVsComputer">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>50</y>
+        <width>131</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Igra protiv racunara</string>
       </property>
      </widget>
     </widget>
@@ -88,6 +101,57 @@
       </property>
       <property name="text">
        <string>Na potezu je: Crni</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="page_3">
+     <widget class="QLabel" name="lbl2TurnDisplay">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>20</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Na potezu je: Crni</string>
+      </property>
+     </widget>
+     <widget class="QGraphicsView" name="graphicsView_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>321</width>
+        <height>321</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btn2Back">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>390</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Nazad</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>40</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Igrac je: Crni</string>
       </property>
      </widget>
     </widget>

@@ -24,6 +24,30 @@ void BoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
 };
 
+void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if(event->button() == Qt::LeftButton)
+    {
+        auto x = static_cast<int>(round(event->scenePos().x()));
+        auto y = static_cast<int>(round(event->scenePos().y()));
+
+        if(!_selected && (_game_state->isValidPixelPieceSelection(x, y)))
+        {
+            _selected = true;
+            _selected_x = x;
+            _selected_y = y;
+            return;
+        }
+
+        if(_selected)
+        {
+            _game_state->makePixelMove(_selected_x, _selected_y, x, y);
+            _game_state->show();
+            _selected = false;
+        }
+    }
+};
+
 void BoardScene::setBoard(Board* board)
 {
     _game_state = board;
@@ -324,4 +348,7 @@ bool Board::isValidPixelPieceSelection(int x, int y)
     return isValidPieceSelection(nx, ny);
 }
 
+VsComputerBoard::VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size)
+    : Board(_display, _move_display, _size)
+{}
 

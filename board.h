@@ -18,22 +18,34 @@ static const int player_white = 1, player_black = -1;
 static const int max_pieces = 32;
 
 class BoardScene;
+class VsComputerBoardScene;
 class Piece;
 class Board;
+class VsComputerBoard;
 
 static Board *localMPBoard;
 static BoardScene *localMPBoardScene;
+
+static Board *vsComputerBoard;
+static BoardScene *vsComputerScene;
 
 /* Kreiramo klasu koja nasledjuje QGraphicsScene da bi dodali funkciju koja odgovara
  * na dogadjaje misa. */
 class BoardScene : public QGraphicsScene
 {
 private:
+
+public:
+    void setBoard(Board* board);
+protected:
     Board* _game_state;
     bool _selected = false;
     int _selected_x, _selected_y;
-public:
-    void setBoard(Board* board);
+    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+};
+
+class VsComputerBoardScene : public BoardScene
+{
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event);
 };
@@ -55,6 +67,17 @@ public:
 class Board
 {
 private:
+
+public:
+    Board(BoardScene* _display, QLabel* _move_display, int _size);
+    void set();
+    void show();
+    bool makeMove(int start_x, int start_y, int end_x, int end_y);
+    bool makePixelMove(int start_x, int start_y, int end_x, int end_y);
+    bool isValidPieceSelection(int x, int y);
+    bool isValidPixelPieceSelection(int x, int y);
+
+protected:
     BoardScene *display;
     QLabel *move_display;
     int size, field_size;
@@ -68,15 +91,16 @@ private:
     void pixelConvert(int x, int y, int &return_x, int &return_y);
     Piece* pieceAt(int x, int y);
     void removePiece(Piece *piece);
+};
 
+class VsComputerBoard : public Board
+{
+    /* XXX: Treba redefinisati isValidPieceSelection tako da jedino vraca da ako je to
+     * igraceva figura (na igracevom potezu). */
+private:
+    int player_color = player_black;
 public:
-    Board(BoardScene* _display, QLabel* _move_display, int _size);
-    void set();
-    void show();
-    bool makeMove(int start_x, int start_y, int end_x, int end_y);
-    bool makePixelMove(int start_x, int start_y, int end_x, int end_y);
-    bool isValidPieceSelection(int x, int y);
-    bool isValidPixelPieceSelection(int x, int y);
+    VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size);
 };
 
 #endif // BOARD_H

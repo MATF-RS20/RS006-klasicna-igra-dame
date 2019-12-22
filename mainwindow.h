@@ -20,6 +20,10 @@ private slots:
 
     void on_btn1Back_clicked();
 
+    void on_btnVsComputer_clicked();
+
+    void on_btn2Back_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

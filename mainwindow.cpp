@@ -18,12 +18,23 @@ MainWindow::MainWindow(QWidget *parent)
     localMPBoard->show();
     localMPBoardScene->setBoard(localMPBoard);
 
-    ui->graphicsView->show();
+    vsComputerScene = new VsComputerBoardScene();
+    ui->graphicsView_2->setScene(vsComputerScene);
+    vsComputerBoard = new VsComputerBoard(vsComputerScene, ui->lbl2TurnDisplay, ui->graphicsView_2->width() - 1);
+    vsComputerBoard->set();
+    vsComputerBoard->show();
+    vsComputerScene->setBoard(vsComputerBoard);
+
+   // ui->graphicsView->show();
 
     /* Preuzeto sa https://www.qtcentre.org/threads/31778-How-to-Disable-Scroll-Bar-of-QGraphicsView-(or-QWidget),
      * uklanjamo nezeljene skrol-barove koji se pojavljuju iako je velicina scene dovoljna da prikaze sadrzaj. */
     ui->graphicsView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     ui->graphicsView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+
+
+    ui->graphicsView_2->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    ui->graphicsView_2->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
     // Potvrdjujemo da je prikazana glavna strana.
     ui->stackedWidget->setCurrentIndex(0);
@@ -34,16 +45,24 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-
 void MainWindow::on_btnLocalMultiplayer_clicked()
 {
     ui->stackedWidget->setCurrentIndex(1);
-
     ui->graphicsView->show();
 }
 
 void MainWindow::on_btn1Back_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::on_btnVsComputer_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(2);
+    ui->graphicsView_2->show();
+}
+
+void MainWindow::on_btn2Back_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
 }
