@@ -15,14 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->graphicsView->setScene(localMPBoardScene);
     localMPBoard = new Board(localMPBoardScene, ui->lbl1TurnDisplay, ui->graphicsView->width() - 1);
     localMPBoard->set();
-    localMPBoard->show();
     localMPBoardScene->setBoard(localMPBoard);
 
     vsComputerScene = new VsComputerBoardScene();
     ui->graphicsView_2->setScene(vsComputerScene);
     vsComputerBoard = new VsComputerBoard(vsComputerScene, ui->lbl2TurnDisplay, ui->graphicsView_2->width() - 1);
     vsComputerBoard->set();
-    vsComputerBoard->show();
     vsComputerScene->setBoard(vsComputerBoard);
 
    // ui->graphicsView->show();
@@ -65,4 +63,14 @@ void MainWindow::on_btnVsComputer_clicked()
 void MainWindow::on_btn2Back_clicked()
 {
     ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::on_btn1NewGame_clicked()
+{
+    localMPBoard->set();
+}
+
+void MainWindow::on_btn2NewGame_clicked()
+{
+    vsComputerBoard->set();
 }

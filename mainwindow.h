@@ -24,6 +24,10 @@ private slots:
 
     void on_btn2Back_clicked();
 
+    void on_btn1NewGame_clicked();
+
+    void on_btn2NewGame_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

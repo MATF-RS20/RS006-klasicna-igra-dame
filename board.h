@@ -37,6 +37,7 @@ private:
 
 public:
     void setBoard(Board* board);
+    void reset();
 protected:
     Board* _game_state;
     bool _selected = false;
@@ -79,10 +80,11 @@ public:
 
 protected:
     BoardScene *display;
-    QLabel *move_display;
+    QLabel *turn_display;
     int size, field_size;
     int piece_count = 0;
     int player_turn = player_black;
+    Piece *piece_in_use = nullptr;
     Piece *pieces[max_pieces];
     bool isEmptyField(int x, int y);
     bool isOppositePlayer(int player, int x, int y);

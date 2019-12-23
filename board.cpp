@@ -7,22 +7,32 @@ void BoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         auto x = static_cast<int>(round(event->scenePos().x()));
         auto y = static_cast<int>(round(event->scenePos().y()));
 
-        if(!_selected && (_game_state->isValidPixelPieceSelection(x, y)))
+        /* Ova podesavanja su da ulepsaju koristenje biranja figure i pravljenja
+         * poteza, tj. DWIM. */
+        //  ???: Dodatno testirati da li reaguje svaki put ispravno.
+        bool not_move = true;
+        if(_selected)
+        {
+
+            not_move = !(_game_state->makePixelMove(_selected_x, _selected_y, x, y));
+            _game_state->show();
+            _selected = false;
+
+        }
+
+        if(not_move && (_game_state->isValidPixelPieceSelection(x, y)))
         {
             _selected = true;
             _selected_x = x;
             _selected_y = y;
-            return;
-        }
-
-        if(_selected)
-        {
-            _game_state->makePixelMove(_selected_x, _selected_y, x, y);
-            _game_state->show();
-            _selected = false;
         }
     }
-};
+}
+
+void BoardScene::reset()
+{
+    _selected = false;
+}
 
 void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
@@ -31,22 +41,27 @@ void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         auto x = static_cast<int>(round(event->scenePos().x()));
         auto y = static_cast<int>(round(event->scenePos().y()));
 
-        if(!_selected && (_game_state->isValidPixelPieceSelection(x, y)))
+        /* Ova podesavanja su da ulepsaju koristenje biranja figure i pravljenja
+         * poteza, tj. DWIM. */
+        //  ???: Dodatno testirati da li reaguje svaki put ispravno.
+        bool not_move = true;
+        if(_selected)
+        {
+
+            not_move = !(_game_state->makePixelMove(_selected_x, _selected_y, x, y));
+            _game_state->show();
+            _selected = false;
+
+        }
+
+        if(not_move && (_game_state->isValidPixelPieceSelection(x, y)))
         {
             _selected = true;
             _selected_x = x;
             _selected_y = y;
-            return;
-        }
-
-        if(_selected)
-        {
-            _game_state->makePixelMove(_selected_x, _selected_y, x, y);
-            _game_state->show();
-            _selected = false;
         }
     }
-};
+}
 
 void BoardScene::setBoard(Board* board)
 {
@@ -155,7 +170,7 @@ void Board::removePiece(Piece *piece)
 }
 
 Board::Board(BoardScene* _display, QLabel* _move_display, int _size)
-    : display(_display), move_display(_move_display),  size(_size)
+    : display(_display), turn_display(_move_display),  size(_size)
 {
     // Predpostavljamo da je scena kvadrat.
     field_size = size / field_num;
@@ -163,6 +178,14 @@ Board::Board(BoardScene* _display, QLabel* _move_display, int _size)
 
 void Board::set()
 {
+    // Resetovati stanje table za slucaj da je pokrenuta nova igra.
+    while(piece_count > 0)
+        removePiece(pieces[0]);
+    player_turn = player_black;
+    piece_in_use = nullptr;
+    turn_display->setText("Na potezu je: Crni");
+    display->reset();
+
     int white_remaining = piece_num, black_remaining = piece_num;
     int i = 0, j = 1;
     while(white_remaining > 0)
@@ -193,6 +216,8 @@ void Board::set()
         }
         black_remaining--;
     }
+
+    this->show();
 }
 
 void Board::show()
@@ -217,10 +242,12 @@ void Board::show()
             display->addItem(field);
         }
 
-    // Prikazivanje figura igre.
-    int padding = 5;
+    // ???: Cini mi se da border crne figure nije iste sirine svuda. M.D.
+    // Prikazivanje figura igre. Ovo je zavisno od velicine scene.
+    int padding = 5, king_padding = 6;
     // ???: Smanjujemo za jedan velicinu jer tako izgleda simetricno.
     int piece_size = field_size - padding * 2 - 1;
+    int crown_size = piece_size - king_padding * 2 + 1;
     for(int i = 0; i < piece_count; i++)
     {
         Piece* cur = pieces[i];
@@ -235,6 +262,22 @@ void Board::show()
 
         // Zelimo crni okvir oko figura, to je podrazumevano.
         display->addItem(piece);
+
+        if(cur->isKing())
+        {
+            QGraphicsEllipseItem* crown =
+                    new QGraphicsEllipseItem(field_size * cur->x + padding + king_padding,
+                                             field_size * cur->y + padding + king_padding,
+                                             crown_size, crown_size);
+
+            if(cur->player() == player_white)
+                crown->setBrush(Qt::gray);
+            else
+                crown->setBrush(Qt::red);
+
+            crown->setPen(Qt::NoPen);
+            display->addItem(crown);
+        }
     }
 }
 
@@ -251,6 +294,7 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
     int player = cur->player();
     int opposite_player = player * (-1);
     bool hasToJump = false;
+    bool made_move = false;
 
     for(int i = 0; i < piece_count; i++)
     {
@@ -265,7 +309,8 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
 
     bool validSmallMove = false;
     // Sama provera da li je ovo ispravan mali potez (figura dijagonalno jedno polje).
-    if(!hasToJump && (start_x - end_x == 1 || start_x - end_x == -1))
+    if(!hasToJump && (start_x - end_x == 1 || start_x - end_x == -1)
+            && isEmptyField(end_x, end_y))
     {
         if(end_y - start_y == player)
             validSmallMove = true;
@@ -283,7 +328,7 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
             cur->makeKing(); // Nije problem vise puta zvati makeKing() nad damom.
 
         player_turn = opposite_player;
-        //return true;
+        made_move = true;
     }
 
 
@@ -291,14 +336,14 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
     bool validJump = false;
     /* isValidJump koristimo nepravilno ali nece doci do greske jer ne koristimo rezultat ako
      * uslov nije ispunjen. FIX: */
-    if((start_x - end_x == 2 || start_x - end_x == -2) && isValidJump(cur, end_x, end_y))
+    if((start_x - end_x == 2 || start_x - end_x == -2) && isValidJump(cur, end_x, end_y)
+            && (piece_in_use == nullptr || piece_in_use == cur))
     {
         if(end_y - start_y == player * 2)
             validJump = true;
         if(cur->isKing() && end_y - start_y == opposite_player * 2)
             validJump = true;
     }
-    //std::cout << validJump << std::endl;
 
     if(validJump)
     {
@@ -309,18 +354,26 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
         removePiece(pieceAt((start_x + end_x) / 2, (start_y + end_y) /2));
 
         if(!canJump(cur))
+        {
             player_turn = opposite_player;
+            piece_in_use = nullptr;
+        }
+        else
+            piece_in_use = cur;
 
         // ???: Sta ako figura postane kralj i onda ima mogucnost skoka? Mi radimo da ne skace vise.
         if(end_y == 0 || end_y == field_num - 1)
             cur->makeKing(); // Nije problem vise puta zvati makeKing() nad damom.
+
+        made_move = true;
     }
 
     if(player_turn == player_black)
-        move_display->setText("Na potezu je: Crni");
+        turn_display->setText("Na potezu je: Crni");
     else
-        move_display->setText("Na potezu je: Beli");
-    return false;
+        turn_display->setText("Na potezu je: Beli");
+
+    return made_move;
 }
 
 bool Board::makePixelMove(int start_x, int start_y, int end_x, int end_y)

@@ -103,6 +103,19 @@
        <string>Na potezu je: Crni</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="btn1NewGame">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>300</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Nova igra</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="page_3">
      <widget class="QLabel" name="lbl2TurnDisplay">
@@ -152,6 +165,19 @@
       </property>
       <property name="text">
        <string>Igrac je: Crni</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btn2NewGame">
+      <property name="geometry">
+       <rect>
+        <x>350</x>
+        <y>300</y>
+        <width>93</width>
+        <height>28</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Nova igra</string>
       </property>
      </widget>
     </widget>
