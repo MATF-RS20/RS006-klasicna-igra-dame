@@ -101,6 +101,20 @@ class VsComputerBoard : public Board
      * igraceva figura (na igracevom potezu). */
 private:
     int player_color = player_black;
+    int board_array[8][8];
+    int move_to_perform[32];
+    int best_score=-1000;
+    void movemax(int board[][8],int* best_score,int x,int y,int depth);
+    void movemin(int board[][8],int* best_score,int x,int y,int depth);
+    void jumpmax(int board[][8],int* best_score,int x,int y,int depth);
+    void jumpmin(int board[][8],int* best_score,int x,int y,int depth);
+    void generateBoardArray();
+    bool canJumpUpLeft(int  board[][8],int i,int j);
+    bool canJumpBottomLeft(int board[][8],int i,int j);
+    bool canJumpUpRight(int board[][8],int i,int j);
+    bool canJumpBottomRight(int board[][8],int i,int j);
+    void minimax();
+
 public:
     VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size);
 };
