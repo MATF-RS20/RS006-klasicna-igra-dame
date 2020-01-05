@@ -77,33 +77,6 @@ public:
     bool makePixelMove(int start_x, int start_y, int end_x, int end_y);
     bool isValidPieceSelection(int x, int y);
     bool isValidPixelPieceSelection(int x, int y);
-
-protected:
-    BoardScene *display;
-    QLabel *turn_display;
-    int size, field_size;
-    int piece_count = 0;
-    int player_turn = player_black;
-    Piece *piece_in_use = nullptr;
-    Piece *pieces[max_pieces];
-    bool isEmptyField(int x, int y);
-    bool isOppositePlayer(int player, int x, int y);
-    bool isValidJump(Piece *piece, int end_x, int end_y);
-    bool canJump(Piece* piece);
-    void pixelConvert(int x, int y, int &return_x, int &return_y);
-    Piece* pieceAt(int x, int y);
-    void removePiece(Piece *piece);
-};
-
-class VsComputerBoard : public Board
-{
-    /* XXX: Treba redefinisati isValidPieceSelection tako da jedino vraca da ako je to
-     * igraceva figura (na igracevom potezu). */
-private:
-    int player_color = player_black;
-    int board_array[8][8];
-    int move_to_perform[32];
-    int best_score=-1000;
     void movemax(int board[][8],int* best_score,int x,int y,int depth);
     void movemin(int board[][8],int* best_score,int x,int y,int depth);
     void jumpmax(int board[][8],int* best_score,int x,int y,int depth);
@@ -114,6 +87,32 @@ private:
     bool canJumpUpRight(int board[][8],int i,int j);
     bool canJumpBottomRight(int board[][8],int i,int j);
     void minimax();
+    void changeTurn();
+
+protected:
+    BoardScene *display;
+    QLabel *turn_display;
+    int size, field_size;
+    int piece_count = 0;
+    int player_turn = player_black;
+    Piece *piece_in_use = nullptr;
+    Piece *pieces[max_pieces];
+    int player_color = player_black;
+    int board_array[8][8];
+    bool isEmptyField(int x, int y);
+    bool isOppositePlayer(int player, int x, int y);
+    bool isValidJump(Piece *piece, int end_x, int end_y);
+    bool canJump(Piece* piece);
+    void pixelConvert(int x, int y, int &return_x, int &return_y);
+    Piece* pieceAt(int x, int y);
+    void removePiece(Piece *piece);
+
+};
+
+class VsComputerBoard : public Board
+{
+    /* XXX: Treba redefinisati isValidPieceSelection tako da jedino vraca da ako je to
+     * igraceva figura (na igracevom potezu). */
 
 public:
     VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size);

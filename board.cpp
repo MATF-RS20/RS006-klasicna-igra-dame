@@ -1,5 +1,4 @@
 #include "board.h"
-
 void BoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if(event->button() == Qt::LeftButton)
@@ -49,9 +48,10 @@ void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         {
 
             not_move = !(_game_state->makePixelMove(_selected_x, _selected_y, x, y));
+            _game_state->minimax();
+            _game_state->changeTurn();
             _game_state->show();
             _selected = false;
-
         }
 
         if(not_move && (_game_state->isValidPixelPieceSelection(x, y)))
@@ -404,12 +404,12 @@ bool Board::isValidPixelPieceSelection(int x, int y)
 VsComputerBoard::VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size)
     : Board(_display, _move_display, _size)
 {}
-
-void VsComputerBoard::generateBoardArray(){
+//generisemo int matricu koja odgovara tabeli na ekranu
+void Board::generateBoardArray(){
     Piece* temp;
     for(int i=0;i<8;i++){
         for(int j=0;j<8;j++){
-            temp=pieceAt(i,j);
+            temp=pieceAt(j,i);
             if(temp==nullptr) board_array[i][j]=0;
             else{
                 if(temp->player()==1){
@@ -424,7 +424,8 @@ void VsComputerBoard::generateBoardArray(){
         }
     }
 }
-bool VsComputerBoard::canJumpUpLeft(int board[][8],int i,int j){
+//mozemo li skociti gore levo
+bool Board::canJumpUpLeft(int board[][8],int i,int j){
     if(i>1 && j>1){
         if(!(board[i-2][j-2]==0)) return false;
         int k=board[i][j];
@@ -433,7 +434,8 @@ bool VsComputerBoard::canJumpUpLeft(int board[][8],int i,int j){
     }
     return false;
 }
-bool VsComputerBoard::canJumpBottomLeft(int board[][8],int i,int j){
+//mozemo li skociti dole levo
+bool Board::canJumpBottomLeft(int board[][8],int i,int j){
     if(i<6 && j>1){
         if(!(board[i+2][j-2]==0)) return false;
         int k=board[i][j];
@@ -442,7 +444,8 @@ bool VsComputerBoard::canJumpBottomLeft(int board[][8],int i,int j){
     }
     return false;
 }
-bool VsComputerBoard::canJumpUpRight(int board[][8],int i,int j){
+//mozemo li skociti gore desno
+bool Board::canJumpUpRight(int board[][8],int i,int j){
     if(i>1 && j<6){
         if(!(board[i-2][j+2]==0)) return false;
         int k=board[i][j];
@@ -451,7 +454,8 @@ bool VsComputerBoard::canJumpUpRight(int board[][8],int i,int j){
     }
     return false;
 }
-bool VsComputerBoard::canJumpBottomRight(int board[][8],int i,int j){
+//mozemo li skociti dole desno
+bool Board::canJumpBottomRight(int board[][8],int i,int j){
     if(i<6 && j<6){
         if(!(board[i+2][j+2]==0)) return false;
         int k=board[i][j];
@@ -460,33 +464,49 @@ bool VsComputerBoard::canJumpBottomRight(int board[][8],int i,int j){
     }
     return false;
 }
-void VsComputerBoard::movemax(int board[][8],int* best_score,int x,int y,int depth){
-    int i,j;
+//ako ima mogucih pomeranja iz tacke (x,y) za racunar, izvrsi ih i evaluiraj dublje
+void Board::movemax(int board[][8],int* best_score,int x,int y,int depth){
+    int i,j,k,l;
     int temp[8][8],optimal[8][8];
-    int min_int=-1001;
-    int score,bestscore=min_int;
+    int min_int=-1000,max_int=1000;
+    int score=max_int,bestscore=min_int;
     bool has_to_jump;
-    if(depth==4){
+    //ako smo odradili dovoljno poteza, sracunaj stanje igre i vrati se
+    if(depth>5){
         score=0;
+        //vidi da li je racunar izgubio
         for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]>0) break;
         if(i==8 && j==8){
-            *best_score=min_int;
+            *best_score=min_int+1;
             return;
         }
+        //da li je pobedio
+        for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]<0) break;
+        if(i==8 && j==8){
+            *best_score=max_int-1;
+            return;
+        }
+        //saberi, +-1 za obicne i +-2 za kraljeve
         for(i=0;i<8;i++) for(j=0;j<8;j++) score+=board[i][j];
         if(score>*best_score) *best_score=score;
         return;
     }
+    //da li je na ovoj lokaciji racunarska figura
     if(board[x][y]>0){
-        if(x<7 && y>0) if(board[x+1][y-1]==0){
+        //moze li dole levo
+        if(x<7 && y>1) if(board[x+1][y-1]==0){
+            //generisi temp tabelu kao da je taj potez odradjen
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y-1]=temp[x][y];temp[x][y]=0;
+            //da li je stigao dole, za krunisanje
+            if(x+1==7) temp[x+1][y-1]=2;
             has_to_jump=false;
-            score=min_int;
+            score=max_int;
+            //pogledaj sve moguce poteze od igraca,vidi koji daje najmanju min vrednost
             for(i=0;i<8;i++) for(j=0;j<8;j++){
                 jumpmin(temp,&score,i,j,depth+1);
-                if(score>min_int) has_to_jump=true;
             }
+            if(score<max_int) has_to_jump=true;
             if(!has_to_jump){
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     movemin(temp,&score,i,j,depth+1);
@@ -494,18 +514,23 @@ void VsComputerBoard::movemax(int board[][8],int* best_score,int x,int y,int dep
             }
             if(score>bestscore){
                 bestscore=score;
-                for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
+                for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
             }
         }
+        //moze li dole desno
         if(x<7 && y<7) if(board[x+1][y+1]==0){
+            //generisi temp tabelu kao da je taj potez odradjen
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y+1]=temp[x][y];temp[x][y]=0;
+            //da li je stigao dole, za krunisanje
+            if(x+1==7) temp[x+1][y+1]=2;
             has_to_jump=false;
-            score=min_int;
+            score=max_int;
+             //pogledaj sve moguce poteze od igraca,vidi koji daje najvecu min vrednost
             for(i=0;i<8;i++) for(j=0;j<8;j++){
                 jumpmin(temp,&score,i,j,depth+1);
-                if(score>min_int) has_to_jump=true;
             }
+            if(score<max_int) has_to_jump=true;
             if(!has_to_jump){
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     movemin(temp,&score,i,j,depth+1);
@@ -513,19 +538,23 @@ void VsComputerBoard::movemax(int board[][8],int* best_score,int x,int y,int dep
             }
             if(score>bestscore){
                 bestscore=score;
-                for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
+                for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
             }
         }
+        //da li je krunisan
         if(board[x][y]==2){
+            //gore levo
             if(x>0 && y>0) if(board[x-1][y-1]==0){
+                //generisi kopiju s tim potezom
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=temp[x][y];temp[x][y]=0;
                 has_to_jump=false;
-                score=min_int;
+                score=max_int;
+                //vidi sve moguce igraceve poteze
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmin(temp,&score,i,j,depth+1);
-                    if(score>min_int) has_to_jump=true;
                 }
+                if(score<max_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemin(temp,&score,i,j,depth+1);
@@ -533,18 +562,20 @@ void VsComputerBoard::movemax(int board[][8],int* best_score,int x,int y,int dep
                 }
                 if(score>bestscore){
                     bestscore=score;
-                    for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
                 }
             }
+            //gore desno
             if(x>0 && y<7) if(board[x-1][y+1]==0){
+                //generisi kopiju
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=temp[x][y];temp[x][y]=0;
                 has_to_jump=false;
-                score=min_int;
+                score=max_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmin(temp,&score,i,j,depth+1);
-                    if(score>min_int) has_to_jump=true;
                 }
+                if(score<max_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemin(temp,&score,i,j,depth+1);
@@ -552,97 +583,138 @@ void VsComputerBoard::movemax(int board[][8],int* best_score,int x,int y,int dep
                 }
                 if(score>bestscore){
                     bestscore=score;
-                    for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
                 }
             }
         }
     }
+    //ako nema validnih poteza
+    else return;
+    //za potrebe debagovanja, ispisi najbolji potez iz tog stanja
+    if(bestscore>min_int){
+        for(i=0; i<8; i++){
+            for(j=0; j<8; j++){
+                std::cout<<" "<<optimal[i][j]<<" ";
+            }
+            std::cout<<"\n";
+        }
+    }
+    //ako je rezultat bolji od postojeceg, prenesi u materinsku f-ju zajedno sa stanjem nakon poteza
     if(bestscore>*best_score){
         *best_score=bestscore;
         for(i=0;i<8;i++) for(j=0;j<8;j++) board[i][j]=optimal[i][j];
     }
 }
-void VsComputerBoard::movemin(int board[][8],int* best_score,int x,int y,int depth){
-    int i,j;
-    int temp[8][8];
-    int max_int=1000;
-    int score,bestscore=max_int;
+void Board::movemin(int board[][8],int* best_score,int x,int y,int depth){
+    int i,j,k,l;
+    int temp[8][8],optimal[8][8];
+    int max_int=1000,min_int=-1000;
+    int score=min_int,bestscore=max_int;
     bool has_to_jump;
+    //ako ima figura na polju
     if(board[x][y]<0){
         if(board[x][y]==-2){
             if(x<7 && y>0) if(board[x+1][y-1]==0){
+                //dole levo
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y-1]=temp[x][y];temp[x][y]=0;
+                if(x+1==7) temp[x+1][y-1]=-2;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
+            //dole desno
             if(x<7 && y<7) if(board[x+1][y+1]==0){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y+1]=temp[x][y];temp[x][y]=0;
+                if(x+1==7) temp[x+1][y+1]=-2;
                 has_to_jump=false;
                 score=max_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
         }
+            //gore levo
             if(x>0 && y>0) if(board[x-1][y-1]==0){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=temp[x][y];temp[x][y]=0;
+                if(x-1==0) temp[x-1][y-1]=-2;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
+            //gore desno
             if(x>0 && y<7) if(board[x-1][y+1]==0){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=temp[x][y];temp[x][y]=0;
-                has_to_jump=false;
-                score=max_int;
+                if(x-1==0) temp[x-1][y+1]=-2;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
-                    jumpmin(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
+                    jumpmax(temp,&score,i,j,depth+1);
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
-                        movemin(temp,&score,i,j,depth+1);
+                        movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
     }
-    if(bestscore>*best_score) *best_score=bestscore;
+    else return;
+    if(bestscore<max_int){
+        for(i=0; i<8; i++){
+            for(j=0; j<8; j++){
+                std::cout<<" "<<optimal[i][j]<<" ";
+            }
+            std::cout<<"\n";
+        }
+    }
+    if(bestscore<*best_score) *best_score=bestscore;
 }
-void VsComputerBoard::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
-    int i,j;
-    int temp[8][8];
-    int max_int=1001;
-    int score,bestscore=max_int;
+void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
+    int i,j,k,l;
+    int temp[8][8],optimal[8][8];
+    int max_int=1000,min_int=-1000;
+    int score=min_int,bestscore=max_int;
     bool has_to_jump;
     if(board[x][y]<0){
         if(board[x][y]==-2){
@@ -650,99 +722,130 @@ void VsComputerBoard::jumpmin(int board[][8],int* best_score,int x,int y,int dep
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y-1]=0; temp[x+2][y-2]=temp[x][y]; temp[x][y]=0;
                 jumpmin(temp,&score,x+2,y-2,depth);
-                if(score<bestscore) bestscore=score;
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y-1]=0; temp[x+2][y-2]=temp[i][j]; temp[x][y]=0;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
             if(canJumpBottomRight(board,x,y)){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y+1]=0; temp[x+2][y+2]=temp[x][y]; temp[x][y]=0;
+                if(x+2==7) temp[x+2][y+2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
-                if(score<bestscore) bestscore=score;
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x+1][y+1]=0; temp[x+2][y+2]=temp[i][j]; temp[x][y]=0;
+                if(x+2==7) temp[x+2][y+2]=-2;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
         }
             if(canJumpUpLeft(board,x,y)){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=0; temp[x-2][y-2]=temp[x][y]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y-2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
-                if(score<bestscore) bestscore=score;
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=0; temp[x-2][y-2]=temp[i][j]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y-2]=-2;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score<bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
             if(canJumpUpRight(board,x,y)){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=0; temp[x-2][y+2]=temp[x][y]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y+2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
-                if(score>bestscore) bestscore=score;
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=0; temp[x-2][y+2]=temp[i][j]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y+2]=-2;
                 has_to_jump=false;
-                score=max_int;
+                score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmax(temp,&score,i,j,depth+1);
-                    if(score<max_int) has_to_jump=true;
                 }
+                if(score>min_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemax(temp,&score,i,j,depth+1);
                     }
                 }
-                if(score>bestscore) bestscore=score;
+                if(score<bestscore){
+                    bestscore=score;
+                    for(k=0;k<8;k++) for(l=0;l<8;l++) optimal[k][l]=temp[k][l];
+                }
             }
+    }
+    else return;
+    if(bestscore<max_int){
+        for(i=0; i<8; i++){
+            for(j=0; j<8; j++){
+                std::cout<<" "<<optimal[i][j]<<" ";
+            }
+            std::cout<<"\n";
+        }
     }
     if(bestscore<*best_score) *best_score=bestscore;
 }
-void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
+void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
     int i,j;
     int temp[8][8],optimal[8][8];
-    int min_int=-1001;
-    int score,bestscore=min_int;
+    int min_int=-1000,max_int=1000;
+    int score=max_int,bestscore=min_int;
     bool has_to_jump;
-    if(depth==4){
+    if(depth>5){
         score=0;
+        //vidi da li je racunar izgubio
         for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]>0) break;
         if(i==8 && j==8){
-            *best_score=min_int;
+            *best_score=min_int+1;
             return;
         }
+        //da li je pobedio
+        for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]<0) break;
+        if(i==8 && j==8){
+            *best_score=max_int-1;
+            return;
+        }
+        //saberi, +-1 za obicne i +-2 za kraljeve
         for(i=0;i<8;i++) for(j=0;j<8;j++) score+=board[i][j];
         if(score>*best_score) *best_score=score;
         return;
@@ -751,19 +854,17 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
         if(canJumpBottomLeft(board,x,y)){
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y-1]=0; temp[x+2][y-2]=temp[x][y]; temp[x][y]=0;
+            if(x+2==7) temp[x+2][y-2]=2;
             jumpmax(temp,&score,x+2,y-2,depth);
-            if(score>bestscore){
-                bestscore=score;
-                for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
-            }
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y-1]=0; temp[x+2][y-2]=temp[i][j]; temp[x][y]=0;
+            if(x+2==7) temp[x+2][y-2]=2;
             has_to_jump=false;
-            score=min_int;
+            score=max_int;
             for(i=0;i<8;i++) for(j=0;j<8;j++){
                 jumpmin(temp,&score,i,j,depth+1);
-                if(score>min_int) has_to_jump=true;
             }
+            if(score<max_int) has_to_jump=true;
             if(!has_to_jump){
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     movemin(temp,&score,i,j,depth+1);
@@ -777,6 +878,7 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
         if(canJumpBottomRight(board,x,y)){
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y+1]=0; temp[x+2][y+2]=temp[x][y]; temp[x][y]=0;
+            if(x+2==7) temp[x+2][y+2]=2;
             jumpmax(temp,&score,x+2,y+2,depth);
             if(score>bestscore){
                 bestscore=score;
@@ -784,12 +886,13 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
             }
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
             temp[x+1][y+1]=0; temp[x+2][y+2]=temp[i][j]; temp[x][y]=0;
+            if(x+2==7) temp[x+2][y+2]=2;
             has_to_jump=false;
-            score=min_int;
+            score=max_int;
             for(i=0;i<8;i++) for(j=0;j<8;j++){
                 jumpmin(temp,&score,i,j,depth+1);
-                if(score>min_int) has_to_jump=true;
             }
+            if(score<max_int) has_to_jump=true;
             if(!has_to_jump){
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     movemin(temp,&score,i,j,depth+1);
@@ -804,6 +907,7 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
             if(canJumpUpLeft(board,x,y)){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=0; temp[x-2][y-2]=temp[x][y]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y-2]=2;
                 jumpmax(temp,&score,x+2,y+2,depth);
                 if(score>bestscore){
                     bestscore=score;
@@ -811,12 +915,13 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
                 }
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y-1]=0; temp[x-2][y-2]=temp[i][j]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y-2]=2;
                 has_to_jump=false;
-                score=min_int;
+                score=max_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmin(temp,&score,i,j,depth+1);
-                    if(score>min_int) has_to_jump=true;
                 }
+                if(score<max_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemin(temp,&score,i,j,depth+1);
@@ -830,6 +935,7 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
             if(canJumpUpRight(board,x,y)){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=0; temp[x-2][y+2]=temp[x][y]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y+2]=2;
                 jumpmax(temp,&score,x+2,y+2,depth);
                 if(score>bestscore){
                     bestscore=score;
@@ -837,12 +943,13 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
                 }
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
                 temp[x-1][y+1]=0; temp[x-2][y+2]=temp[i][j]; temp[x][y]=0;
+                if(x-2==0) temp[x-2][y+2]=2;
                 has_to_jump=false;
-                score=min_int;
+                score=max_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
                     jumpmin(temp,&score,i,j,depth+1);
-                    if(score>min_int) has_to_jump=true;
                 }
+                if(score<max_int) has_to_jump=true;
                 if(!has_to_jump){
                     for(i=0;i<8;i++) for(j=0;j<8;j++){
                         movemin(temp,&score,i,j,depth+1);
@@ -855,20 +962,38 @@ void VsComputerBoard::jumpmax(int board[][8],int* best_score,int x,int y,int dep
             }
         }
     }
+    else return;
+    if(bestscore>min_int){
+        for(i=0; i<8; i++){
+            for(j=0; j<8; j++){
+                std::cout<<" "<<optimal[i][j]<<" ";
+            }
+            std::cout<<"\n";
+        }
+    }
     if(bestscore>*best_score){
         *best_score=bestscore;
         for(i=0;i<8;i++) for(j=0;j<8;j++) board[i][j]=optimal[i][j];
     }
 }
-
-void VsComputerBoard::minimax(){
+//funkcija minimax algoritma
+void Board::minimax(){
+    //od trenutnog stanja generisi matricu nad kojom ce se raditi
+    generateBoardArray();
     bool has_to_jump=false;
+    //par promenljivih za laksu obradu
     int i,j,k,l,temp_score=-1000,score=-1000;
     int temp_board[8][8],optimal[8][8];
+    for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=0;
+    //prvo gledamo moguce skokove pa ako nema pomeraje
+    //za svako polje na tabeli
     for(i=0;i<8;i++){
         for(j=0;j<8;j++){
+            //ucitaj u temp tabelu trenutno stanje igre
             for(k=0;k<8;k++) for(l=0;l<8;l++) temp_board[k][l]=board_array[k][l];
+            //vidi ako racunar moze skok s tog polja
             jumpmax(temp_board,&temp_score,i,j,0);
+            //u temp_score je upisan najbolji rezultat pronadjen ovako, ako najbolji upisi najbolji rezultat i stanje
             if(temp_score>score){
                 has_to_jump=true;
                 score=temp_score;
@@ -876,6 +1001,7 @@ void VsComputerBoard::minimax(){
             }
         }
     }
+    //ako nema opcija za skakanje, isto samo s pomeranjem
     if(!has_to_jump){
         for(i=0;i<8;i++){
             for(j=0;j<8;j++){
@@ -888,4 +1014,23 @@ void VsComputerBoard::minimax(){
             }
         }
     }
+    //rekonstruisi tablu na osnovu novodobijene matrice
+    for(i=0;i<8;i++){
+        for(j=0;j<8;j++){
+            if(optimal[i][j]==0 && pieceAt(i,j)!=nullptr) removePiece(pieceAt(i,j));
+            if(optimal[i][j]!=0 && pieceAt(i,j)==nullptr){
+                if(optimal[i][j]>0){
+                     pieces[piece_count++] = new Piece(player_white, j, i);
+                     if(optimal[i][j]==2) pieces[piece_count]->makeKing();
+                }
+                if(optimal[i][j]<0){
+                     pieces[piece_count++] = new Piece(player_black, j, i);
+                     if(optimal[i][j]==-2) pieces[piece_count]->makeKing();
+                }
+            }
+        }
+    }
+}
+void Board::changeTurn(){
+    player_turn=player_turn*-1;
 }
