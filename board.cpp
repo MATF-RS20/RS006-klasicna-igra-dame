@@ -1017,14 +1017,19 @@ void Board::minimax(){
     //rekonstruisi tablu na osnovu novodobijene matrice
     for(i=0;i<8;i++){
         for(j=0;j<8;j++){
-            if(optimal[i][j]==0 && pieceAt(i,j)!=nullptr) removePiece(pieceAt(i,j));
-            if(optimal[i][j]!=0 && pieceAt(i,j)==nullptr){
+            if(optimal[i][j]==0 && pieceAt(j,i)!=nullptr){
+                removePiece(pieceAt(i,j));
+                std::cout << "nestaje " << i << j << '\n';
+            }
+            if(optimal[i][j]!=0 && pieceAt(j,i)==nullptr){
                 if(optimal[i][j]>0){
                      pieces[piece_count++] = new Piece(player_white, j, i);
+                     std::cout << "pojavljuje beli" << i << j << '\n';
                      if(optimal[i][j]==2) pieces[piece_count]->makeKing();
                 }
                 if(optimal[i][j]<0){
                      pieces[piece_count++] = new Piece(player_black, j, i);
+                     std::cout << "pojavljuje crni" << i << j << '\n';
                      if(optimal[i][j]==-2) pieces[piece_count]->makeKing();
                 }
             }
