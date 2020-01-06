@@ -70,7 +70,7 @@ class Board
 private:
 
 public:
-    Board(BoardScene* _display, QLabel* _move_display, int _size);
+    Board(BoardScene* _display, QLabel* _move_display, QLabel* _result_display, int _size);
     void set();
     void show();
     bool makeMove(int start_x, int start_y, int end_x, int end_y);
@@ -92,6 +92,7 @@ public:
 protected:
     BoardScene *display;
     QLabel *turn_display;
+    QLabel *result_display;
     int size, field_size;
     int piece_count = 0;
     int player_turn = player_black;
@@ -102,7 +103,12 @@ protected:
     bool isEmptyField(int x, int y);
     bool isOppositePlayer(int player, int x, int y);
     bool isValidJump(Piece *piece, int end_x, int end_y);
+    bool isValidMove(Piece *piece, int end_x, int end_y);
     bool canJump(Piece* piece);
+    bool canMove(Piece* piece);
+    bool hasJump();
+    bool hasMove();
+    void updateResult();
     void pixelConvert(int x, int y, int &return_x, int &return_y);
     Piece* pieceAt(int x, int y);
     void removePiece(Piece *piece);
@@ -115,7 +121,7 @@ class VsComputerBoard : public Board
      * igraceva figura (na igracevom potezu). */
 
 public:
-    VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size);
+    VsComputerBoard(BoardScene* _display, QLabel* _move_display, QLabel* _result_display, int _size);
 };
 
 #endif // BOARD_H

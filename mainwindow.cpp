@@ -13,13 +13,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     localMPBoardScene = new BoardScene();
     ui->graphicsView->setScene(localMPBoardScene);
-    localMPBoard = new Board(localMPBoardScene, ui->lbl1TurnDisplay, ui->graphicsView->width() - 1);
+    localMPBoard = new Board(localMPBoardScene, ui->lbl1TurnDisplay, ui->lbl1Result, ui->graphicsView->width() - 1);
     localMPBoard->set();
     localMPBoardScene->setBoard(localMPBoard);
 
     vsComputerScene = new VsComputerBoardScene();
     ui->graphicsView_2->setScene(vsComputerScene);
-    vsComputerBoard = new VsComputerBoard(vsComputerScene, ui->lbl2TurnDisplay, ui->graphicsView_2->width() - 1);
+    vsComputerBoard = new VsComputerBoard(vsComputerScene, ui->lbl2TurnDisplay, ui->lbl2Result, ui->graphicsView_2->width() - 1);
     vsComputerBoard->set();
     vsComputerScene->setBoard(vsComputerBoard);
 
