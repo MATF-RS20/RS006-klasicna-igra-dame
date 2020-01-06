@@ -42,7 +42,7 @@ void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         /* Ova podesavanja su da ulepsaju koristenje biranja figure i pravljenja
          * poteza, tj. DWIM. */
-        //  ???: Dodatno testirati da li reaguje svaki put ispravno.
+        //  TODO: Dodatno testirati da li reaguje svaki put ispravno.
         bool not_move = true;
         if(_selected)
         {
@@ -120,60 +120,59 @@ bool Board::isValidMove(Piece *piece, int end_x, int end_y)
 {
     /* XXX: Podrazumevamo da smo dali ispravan pokret u tome da je zeljeno polje
      * direktno dijagonalno i odgovarajuce sa statusom figure (dama ili ne). */
-    bool free = isEmptyField(end_x, end_y);
-    return free;
+    return isEmptyField(end_x, end_y);
 }
 
 
 bool Board::canJump(Piece* piece)
 {
     // Podrazumevamo da je potez pravog igraca.
-    bool hasToJump = false;
+    bool can_jump = false;
     int player = piece->player();
     int opposite_player = player * (-1);
     int x = piece->x, y = piece->y;
 
     if(isValidJump(piece, x + 2, y + 2 * player))
-        hasToJump = true;
+        can_jump = true;
     else if(isValidJump(piece, x - 2, y + 2 * player))
-        hasToJump = true;
+        can_jump = true;
     else if(piece->isKing())
     {
         if(isValidJump(piece, x + 2, y + 2 * opposite_player))
-            hasToJump = true;
+            can_jump = true;
         else if(isValidJump(piece, x - 2, y + 2 * opposite_player))
-            hasToJump = true;
+            can_jump = true;
     }
 
-    return hasToJump;
+    return can_jump;
 }
 
 bool Board::canMove(Piece* piece)
 {
     // Podrazumevamo da je potez pravog igraca.
-    bool canMove = false;
+    bool can_move = false;
     int player = player_turn;
     int opposite_player = player * (-1);
     auto x = piece->x, y = piece->y;
 
     if(isValidMove(piece, x + 1, y + 1 * player))
-        canMove = true;
+        can_move = true;
     else if(isValidMove(piece, x - 1, y + 1 * player))
-        canMove = true;
+        can_move = true;
     else if(piece->isKing())
     {
         if(isValidMove(piece, x + 1, y + 1 * opposite_player))
-            canMove = true;
+            can_move = true;
         else if(isValidJump(piece, x - 1, y + 1 * opposite_player))
-            canMove = true;
+            can_move = true;
     }
 
-    return canMove;
+    return can_move;
 }
 
 bool Board::hasJump()
 {
-    bool hasJump = false;
+    bool has_jump = false;
 
     for(int i = 0; i < piece_count; i++)
     {
@@ -181,16 +180,16 @@ bool Board::hasJump()
         if(piece->player() != player_turn)
             continue;
 
-        hasJump = canJump(piece);
+        has_jump = canJump(piece);
 
-        if(hasJump) break;
+        if(has_jump) break;
     }
 
-    return hasJump;
+    return has_jump;
 }
 bool Board::hasMove()
 {
-    bool hasMove = false;
+    bool has_move = false;
 
     for(int i = 0; i < piece_count; i++)
     {
@@ -198,12 +197,12 @@ bool Board::hasMove()
         if(piece->player() != player_turn)
             continue;
 
-        hasMove = canMove(piece);
+        has_move = canMove(piece);
 
-        if(hasMove) break;
+        if(has_move) break;
     }
 
-    return hasMove;
+    return has_move;
 }
 void Board::updateResult()
 {
@@ -398,22 +397,22 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
     // Proveramo da li igrac mora da preskace, tj. da li ima priliku da preskace.
     int player = cur->player();
     int opposite_player = player * (-1);
-    bool hasToJump = hasJump();
+    bool has_to_jump = hasJump();
     bool made_move = false;  
-    bool validSmallMove = false;
+    bool valid_move = false;
 
     // Sama provera da li je ovo ispravan mali potez (figura dijagonalno jedno polje).
-    if(!hasToJump && (start_x - end_x == 1 || start_x - end_x == -1)
-            && isEmptyField(end_x, end_y))
+    if(!has_to_jump && (start_x - end_x == 1 || start_x - end_x == -1)
+            && isValidMove(cur, end_x, end_y))
     {
         if(end_y - start_y == player)
-            validSmallMove = true;
+            valid_move = true;
         if(cur->isKing() && (end_y - start_y == opposite_player))
-            validSmallMove = true;
+            valid_move = true;
     }
 
     // Ako je ovo slucaj izvrsavamo zeljeni potez.
-    if(validSmallMove)
+    if(valid_move)
     {
         cur->x = end_x;
         cur->y = end_y;
@@ -427,19 +426,19 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
 
 
     // Provera da li je ovo ispravno preskakanje.
-    bool validJump = false;
+    bool valid_jump = false;
     /* isValidJump koristimo nepravilno ali nece doci do greske jer ne koristimo rezultat ako
      * uslov nije ispunjen. FIX: */
     if((start_x - end_x == 2 || start_x - end_x == -2) && isValidJump(cur, end_x, end_y)
             && (piece_in_use == nullptr || piece_in_use == cur))
     {
         if(end_y - start_y == player * 2)
-            validJump = true;
+            valid_jump = true;
         if(cur->isKing() && end_y - start_y == opposite_player * 2)
-            validJump = true;
+            valid_jump = true;
     }
 
-    if(validJump)
+    if(valid_jump)
     {
         cur->x = end_x;
         cur->y = end_y;
