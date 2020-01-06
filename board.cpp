@@ -8,7 +8,7 @@ void BoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         /* Ova podesavanja su da ulepsaju koristenje biranja figure i pravljenja
          * poteza, tj. DWIM. */
-        //  ???: Dodatno testirati da li reaguje svaki put ispravno.
+        //  TODO: Dodatno testirati da li reaguje svaki put ispravno.
         bool not_move = true;
         if(_selected)
         {
@@ -42,15 +42,18 @@ void VsComputerBoardScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         /* Ova podesavanja su da ulepsaju koristenje biranja figure i pravljenja
          * poteza, tj. DWIM. */
-        //  ???: Dodatno testirati da li reaguje svaki put ispravno.
+        //  TODO: Dodatno testirati da li reaguje svaki put ispravno.
         bool not_move = true;
         if(_selected)
         {
 
             not_move = !(_game_state->makePixelMove(_selected_x, _selected_y, x, y));
-            _game_state->minimax();
-            _game_state->changeTurn();
-            _game_state->show();
+            if(!not_move)
+            {
+                _game_state->minimax();
+                _game_state->changeTurn();
+                _game_state->show();
+            }
             _selected = false;
         }
 
@@ -113,27 +116,119 @@ bool Board::isValidJump(Piece *piece, int end_x, int end_y)
     return free && jumped;
 }
 
+bool Board::isValidMove(Piece *piece, int end_x, int end_y)
+{
+    /* XXX: Podrazumevamo da smo dali ispravan pokret u tome da je zeljeno polje
+     * direktno dijagonalno i odgovarajuce sa statusom figure (dama ili ne). */
+    return isEmptyField(end_x, end_y);
+}
+
+
 bool Board::canJump(Piece* piece)
 {
     // Podrazumevamo da je potez pravog igraca.
-    bool hasToJump = false;
+    bool can_jump = false;
     int player = piece->player();
     int opposite_player = player * (-1);
     int x = piece->x, y = piece->y;
 
     if(isValidJump(piece, x + 2, y + 2 * player))
-        hasToJump = true;
+        can_jump = true;
     else if(isValidJump(piece, x - 2, y + 2 * player))
-        hasToJump = true;
+        can_jump = true;
     else if(piece->isKing())
     {
         if(isValidJump(piece, x + 2, y + 2 * opposite_player))
-            hasToJump = true;
+            can_jump = true;
         else if(isValidJump(piece, x - 2, y + 2 * opposite_player))
-            hasToJump = true;
+            can_jump = true;
     }
 
-    return hasToJump;
+    return can_jump;
+}
+
+bool Board::canMove(Piece* piece)
+{
+    // Podrazumevamo da je potez pravog igraca.
+    bool can_move = false;
+    int player = player_turn;
+    int opposite_player = player * (-1);
+    auto x = piece->x, y = piece->y;
+
+    if(isValidMove(piece, x + 1, y + 1 * player))
+        can_move = true;
+    else if(isValidMove(piece, x - 1, y + 1 * player))
+        can_move = true;
+    else if(piece->isKing())
+    {
+        if(isValidMove(piece, x + 1, y + 1 * opposite_player))
+            can_move = true;
+        else if(isValidJump(piece, x - 1, y + 1 * opposite_player))
+            can_move = true;
+    }
+
+    return can_move;
+}
+
+bool Board::hasJump()
+{
+    bool has_jump = false;
+
+    for(int i = 0; i < piece_count; i++)
+    {
+        Piece *piece = pieces[i];
+        if(piece->player() != player_turn)
+            continue;
+
+        has_jump = canJump(piece);
+
+        if(has_jump) break;
+    }
+
+    return has_jump;
+}
+bool Board::hasMove()
+{
+    bool has_move = false;
+
+    for(int i = 0; i < piece_count; i++)
+    {
+        Piece *piece = pieces[i];
+        if(piece->player() != player_turn)
+            continue;
+
+        has_move = canMove(piece);
+
+        if(has_move) break;
+    }
+
+    return has_move;
+}
+void Board::updateResult()
+{
+    // Ocekujemo da je ovo pozvano sa postavljenim igracem za koga proveravamo je li izgubio.
+    // TODO: Testirati ovu funkciju za slucaj da igrac vise nema poteza.
+    bool has_pieces = false;
+    bool has_move = false;
+
+    for(int i = 0; i < piece_count; i++)
+    {
+        Piece *piece = pieces[i];
+        if(piece->player() != player_turn)
+            continue;
+        else
+            has_pieces = true;
+    }
+
+    has_move = hasJump() || hasMove();
+
+    if(!has_move || !has_pieces)
+    {
+        if(player_turn == player_white)
+            result_display->setText("Pobedio: Crni");
+        else
+            result_display->setText("Pobedio: Beli");
+    }
 }
 
 void Board::pixelConvert(int x, int y, int &return_x, int &return_y)
@@ -169,8 +264,8 @@ void Board::removePiece(Piece *piece)
         }
 }
 
-Board::Board(BoardScene* _display, QLabel* _move_display, int _size)
-    : display(_display), turn_display(_move_display),  size(_size)
+Board::Board(BoardScene* _display, QLabel* _move_display, QLabel* _result_display, int _size)
+    : display(_display), turn_display(_move_display), result_display(_result_display), size(_size)
 {
     // Predpostavljamo da je scena kvadrat.
     field_size = size / field_num;
@@ -184,6 +279,7 @@ void Board::set()
     player_turn = player_black;
     piece_in_use = nullptr;
     turn_display->setText("Na potezu je: Crni");
+    result_display->setText("Igra je u toku");
     display->reset();
 
     int white_remaining = piece_num, black_remaining = piece_num;
@@ -279,6 +375,14 @@ void Board::show()
             display->addItem(crown);
         }
     }
+
+//    std::cout  << "Mladen\n";
+//    for(int i = 0; i < piece_count; i++)
+//    {
+//        std::cout << pieces[i]->x << ", " << pieces[i]->y << std::endl;
+//    }
+//    std::cout  << "Mladen\n";
+//    std::cout << piece_count << std::endl;
 }
 
 bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
@@ -293,33 +397,22 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
     // Proveramo da li igrac mora da preskace, tj. da li ima priliku da preskace.
     int player = cur->player();
     int opposite_player = player * (-1);
-    bool hasToJump = false;
-    bool made_move = false;
+    bool has_to_jump = hasJump();
+    bool made_move = false;  
+    bool valid_move = false;
 
-    for(int i = 0; i < piece_count; i++)
-    {
-        Piece *piece = pieces[i];
-        if(piece->player() != player)
-            continue;
-
-        hasToJump = canJump(piece);
-
-        if(hasToJump) break;
-    }
-
-    bool validSmallMove = false;
     // Sama provera da li je ovo ispravan mali potez (figura dijagonalno jedno polje).
-    if(!hasToJump && (start_x - end_x == 1 || start_x - end_x == -1)
-            && isEmptyField(end_x, end_y))
+    if(!has_to_jump && (start_x - end_x == 1 || start_x - end_x == -1)
+            && isValidMove(cur, end_x, end_y))
     {
         if(end_y - start_y == player)
-            validSmallMove = true;
+            valid_move = true;
         if(cur->isKing() && (end_y - start_y == opposite_player))
-            validSmallMove = true;
+            valid_move = true;
     }
 
     // Ako je ovo slucaj izvrsavamo zeljeni potez.
-    if(validSmallMove)
+    if(valid_move)
     {
         cur->x = end_x;
         cur->y = end_y;
@@ -333,19 +426,19 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
 
 
     // Provera da li je ovo ispravno preskakanje.
-    bool validJump = false;
+    bool valid_jump = false;
     /* isValidJump koristimo nepravilno ali nece doci do greske jer ne koristimo rezultat ako
      * uslov nije ispunjen. FIX: */
     if((start_x - end_x == 2 || start_x - end_x == -2) && isValidJump(cur, end_x, end_y)
             && (piece_in_use == nullptr || piece_in_use == cur))
     {
         if(end_y - start_y == player * 2)
-            validJump = true;
+            valid_jump = true;
         if(cur->isKing() && end_y - start_y == opposite_player * 2)
-            validJump = true;
+            valid_jump = true;
     }
 
-    if(validJump)
+    if(valid_jump)
     {
         cur->x = end_x;
         cur->y = end_y;
@@ -372,6 +465,9 @@ bool Board::makeMove(int start_x, int start_y, int end_x, int end_y)
         turn_display->setText("Na potezu je: Crni");
     else
         turn_display->setText("Na potezu je: Beli");
+
+    if(made_move)
+        updateResult();
 
     return made_move;
 }
@@ -401,9 +497,10 @@ bool Board::isValidPixelPieceSelection(int x, int y)
     return isValidPieceSelection(nx, ny);
 }
 
-VsComputerBoard::VsComputerBoard(BoardScene* _display, QLabel* _move_display, int _size)
-    : Board(_display, _move_display, _size)
+VsComputerBoard::VsComputerBoard(BoardScene* _display, QLabel* _move_display, QLabel* _result_display, int _size)
+    : Board(_display, _move_display, _result_display, _size)
 {}
+
 //generisemo int matricu koja odgovara tabeli na ekranu
 void Board::generateBoardArray(){
     Piece* temp;
@@ -591,14 +688,14 @@ void Board::movemax(int board[][8],int* best_score,int x,int y,int depth){
     //ako nema validnih poteza
     else return;
     //za potrebe debagovanja, ispisi najbolji potez iz tog stanja
-    if(bestscore>min_int){
-        for(i=0; i<8; i++){
-            for(j=0; j<8; j++){
-                std::cout<<" "<<optimal[i][j]<<" ";
-            }
-            std::cout<<"\n";
-        }
-    }
+//    if(bestscore>min_int){
+//        for(i=0; i<8; i++){
+//            for(j=0; j<8; j++){
+//                std::cout<<" "<<optimal[i][j]<<" ";
+//            }
+//            std::cout<<"\n";
+//        }
+//    }
     //ako je rezultat bolji od postojeceg, prenesi u materinsku f-ju zajedno sa stanjem nakon poteza
     if(bestscore>*best_score){
         *best_score=bestscore;
@@ -700,14 +797,14 @@ void Board::movemin(int board[][8],int* best_score,int x,int y,int depth){
             }
     }
     else return;
-    if(bestscore<max_int){
-        for(i=0; i<8; i++){
-            for(j=0; j<8; j++){
-                std::cout<<" "<<optimal[i][j]<<" ";
-            }
-            std::cout<<"\n";
-        }
-    }
+//    if(bestscore<max_int){
+//        for(i=0; i<8; i++){
+//            for(j=0; j<8; j++){
+//                std::cout<<" "<<optimal[i][j]<<" ";
+//            }
+//            std::cout<<"\n";
+//        }
+//    }
     if(bestscore<*best_score) *best_score=bestscore;
 }
 void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
@@ -815,14 +912,14 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
             }
     }
     else return;
-    if(bestscore<max_int){
-        for(i=0; i<8; i++){
-            for(j=0; j<8; j++){
-                std::cout<<" "<<optimal[i][j]<<" ";
-            }
-            std::cout<<"\n";
-        }
-    }
+//    if(bestscore<max_int){
+//        for(i=0; i<8; i++){
+//            for(j=0; j<8; j++){
+//                std::cout<<" "<<optimal[i][j]<<" ";
+//            }
+//            std::cout<<"\n";
+//        }
+//    }
     if(bestscore<*best_score) *best_score=bestscore;
 }
 void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
@@ -963,14 +1060,14 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
         }
     }
     else return;
-    if(bestscore>min_int){
-        for(i=0; i<8; i++){
-            for(j=0; j<8; j++){
-                std::cout<<" "<<optimal[i][j]<<" ";
-            }
-            std::cout<<"\n";
-        }
-    }
+//    if(bestscore>min_int){
+//        for(i=0; i<8; i++){
+//            for(j=0; j<8; j++){
+//                std::cout<<" "<<optimal[i][j]<<" ";
+//            }
+//            std::cout<<"\n";
+//        }
+//    }
     if(bestscore>*best_score){
         *best_score=bestscore;
         for(i=0;i<8;i++) for(j=0;j<8;j++) board[i][j]=optimal[i][j];
@@ -1015,6 +1112,7 @@ void Board::minimax(){
         }
     }
     //rekonstruisi tablu na osnovu novodobijene matrice
+    //std::cout << "Stefan" << std::endl;
     for(i=0;i<8;i++){
         for(j=0;j<8;j++){
             if(optimal[i][j]==0 && pieceAt(j,i)!=nullptr){
@@ -1032,9 +1130,12 @@ void Board::minimax(){
                      std::cout << "pojavljuje crni" << i << j << '\n';
                      if(optimal[i][j]==-2) pieces[piece_count]->makeKing();
                 }
+
             }
+            //std::cout<<" "<<optimal[i][j]<<" \n" ;
         }
     }
+    //std::cout << "Stefan" << std::endl;
 }
 void Board::changeTurn(){
     player_turn=player_turn*-1;

@@ -116,6 +116,19 @@
        <string>Nova igra</string>
       </property>
      </widget>
+     <widget class="QLabel" name="lbl1Result">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>40</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Igra je u toku</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="page_3">
      <widget class="QLabel" name="lbl2TurnDisplay">
@@ -178,6 +191,19 @@
       </property>
       <property name="text">
        <string>Nova igra</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lbl2Result">
+      <property name="geometry">
+       <rect>
+        <x>340</x>
+        <y>60</y>
+        <width>121</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Igra je u toku</string>
       </property>
      </widget>
     </widget>
