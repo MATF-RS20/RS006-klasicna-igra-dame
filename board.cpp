@@ -523,6 +523,7 @@ void Board::generateBoardArray(){
 }
 //mozemo li skociti gore levo
 bool Board::canJumpUpLeft(int board[][8],int i,int j){
+    if(i<0 || i>7 || j<0 || j>7) return false;
     if(i>1 && j>1){
         if(!(board[i-2][j-2]==0)) return false;
         int k=board[i][j];
@@ -533,6 +534,7 @@ bool Board::canJumpUpLeft(int board[][8],int i,int j){
 }
 //mozemo li skociti dole levo
 bool Board::canJumpBottomLeft(int board[][8],int i,int j){
+    if(i<0 || i>7 || j<0 || j>7) return false;
     if(i<6 && j>1){
         if(!(board[i+2][j-2]==0)) return false;
         int k=board[i][j];
@@ -543,6 +545,7 @@ bool Board::canJumpBottomLeft(int board[][8],int i,int j){
 }
 //mozemo li skociti gore desno
 bool Board::canJumpUpRight(int board[][8],int i,int j){
+    if(i<0 || i>7 || j<0 || j>7) return false;
     if(i>1 && j<6){
         if(!(board[i-2][j+2]==0)) return false;
         int k=board[i][j];
@@ -553,6 +556,7 @@ bool Board::canJumpUpRight(int board[][8],int i,int j){
 }
 //mozemo li skociti dole desno
 bool Board::canJumpBottomRight(int board[][8],int i,int j){
+    if(i<0 || i>7 || j<0 || j>7) return false;
     if(i<6 && j<6){
         if(!(board[i+2][j+2]==0)) return false;
         int k=board[i][j];
@@ -568,8 +572,9 @@ void Board::movemax(int board[][8],int* best_score,int x,int y,int depth){
     int min_int=-1000,max_int=1000;
     int score=max_int,bestscore=min_int;
     bool has_to_jump;
+    if(x<0 || x>7 || y<0 || y>7) return;
     //ako smo odradili dovoljno poteza, sracunaj stanje igre i vrati se
-    if(depth>5){
+    if(depth>2){
         score=0;
         //vidi da li je racunar izgubio
         for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]>0) break;
@@ -695,6 +700,7 @@ void Board::movemax(int board[][8],int* best_score,int x,int y,int depth){
 //            }
 //            std::cout<<"\n";
 //        }
+//        std::cout<<"\n";
 //    }
     //ako je rezultat bolji od postojeceg, prenesi u materinsku f-ju zajedno sa stanjem nakon poteza
     if(bestscore>*best_score){
@@ -709,6 +715,7 @@ void Board::movemin(int board[][8],int* best_score,int x,int y,int depth){
     int score=min_int,bestscore=max_int;
     bool has_to_jump;
     //ako ima figura na polju
+    if(x<0 || x>7 || y<0 || y>7) return;
     if(board[x][y]<0){
         if(board[x][y]==-2){
             if(x<7 && y>0) if(board[x+1][y-1]==0){
@@ -813,6 +820,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
     int max_int=1000,min_int=-1000;
     int score=min_int,bestscore=max_int;
     bool has_to_jump;
+    if(x<0 || x>7 || y<0 || y>7) return;
     if(board[x][y]<0){
         if(board[x][y]==-2){
             if(canJumpBottomLeft(board,x,y)){
@@ -820,7 +828,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
                 temp[x+1][y-1]=0; temp[x+2][y-2]=temp[x][y]; temp[x][y]=0;
                 jumpmin(temp,&score,x+2,y-2,depth);
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x+1][y-1]=0; temp[x+2][y-2]=temp[i][j]; temp[x][y]=0;
+                temp[x+1][y-1]=0; temp[x+2][y-2]=temp[x][y]; temp[x][y]=0;
                 has_to_jump=false;
                 score=min_int;
                 for(i=0;i<8;i++) for(j=0;j<8;j++){
@@ -843,7 +851,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
                 if(x+2==7) temp[x+2][y+2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x+1][y+1]=0; temp[x+2][y+2]=temp[i][j]; temp[x][y]=0;
+                temp[x+1][y+1]=0; temp[x+2][y+2]=temp[x][y]; temp[x][y]=0;
                 if(x+2==7) temp[x+2][y+2]=-2;
                 has_to_jump=false;
                 score=min_int;
@@ -868,7 +876,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
                 if(x-2==0) temp[x-2][y-2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x-1][y-1]=0; temp[x-2][y-2]=temp[i][j]; temp[x][y]=0;
+                temp[x-1][y-1]=0; temp[x-2][y-2]=temp[x][y]; temp[x][y]=0;
                 if(x-2==0) temp[x-2][y-2]=-2;
                 has_to_jump=false;
                 score=min_int;
@@ -892,7 +900,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
                 if(x-2==0) temp[x-2][y+2]=-2;
                 jumpmin(temp,&score,x+2,y+2,depth);
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x-1][y+1]=0; temp[x-2][y+2]=temp[i][j]; temp[x][y]=0;
+                temp[x-1][y+1]=0; temp[x-2][y+2]=temp[x][y]; temp[x][y]=0;
                 if(x-2==0) temp[x-2][y+2]=-2;
                 has_to_jump=false;
                 score=min_int;
@@ -919,6 +927,7 @@ void Board::jumpmin(int board[][8],int* best_score,int x,int y,int depth){
 //            }
 //            std::cout<<"\n";
 //        }
+//        std::cout<<"\n";
 //    }
     if(bestscore<*best_score) *best_score=bestscore;
 }
@@ -928,7 +937,8 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
     int min_int=-1000,max_int=1000;
     int score=max_int,bestscore=min_int;
     bool has_to_jump;
-    if(depth>5){
+    if(x<0 || x>7 || y<0 || y>7) return;
+    if(depth>2){
         score=0;
         //vidi da li je racunar izgubio
         for(i=0;i<8;i++) for(j=0;j<8;j++) if(board[i][j]>0) break;
@@ -954,7 +964,7 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
             if(x+2==7) temp[x+2][y-2]=2;
             jumpmax(temp,&score,x+2,y-2,depth);
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-            temp[x+1][y-1]=0; temp[x+2][y-2]=temp[i][j]; temp[x][y]=0;
+            temp[x+1][y-1]=0; temp[x+2][y-2]=temp[x][y]; temp[x][y]=0;
             if(x+2==7) temp[x+2][y-2]=2;
             has_to_jump=false;
             score=max_int;
@@ -982,7 +992,7 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
                 for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
             }
             for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-            temp[x+1][y+1]=0; temp[x+2][y+2]=temp[i][j]; temp[x][y]=0;
+            temp[x+1][y+1]=0; temp[x+2][y+2]=temp[x][y]; temp[x][y]=0;
             if(x+2==7) temp[x+2][y+2]=2;
             has_to_jump=false;
             score=max_int;
@@ -1011,7 +1021,7 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
                     for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
                 }
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x-1][y-1]=0; temp[x-2][y-2]=temp[i][j]; temp[x][y]=0;
+                temp[x-1][y-1]=0; temp[x-2][y-2]=temp[x][y]; temp[x][y]=0;
                 if(x-2==0) temp[x-2][y-2]=2;
                 has_to_jump=false;
                 score=max_int;
@@ -1039,7 +1049,7 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
                     for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=temp[i][j];
                 }
                 for(i=0;i<8;i++) for(j=0;j<8;j++) temp[i][j]=board[i][j];
-                temp[x-1][y+1]=0; temp[x-2][y+2]=temp[i][j]; temp[x][y]=0;
+                temp[x-1][y+1]=0; temp[x-2][y+2]=temp[x][y]; temp[x][y]=0;
                 if(x-2==0) temp[x-2][y+2]=2;
                 has_to_jump=false;
                 score=max_int;
@@ -1067,6 +1077,7 @@ void Board::jumpmax(int board[][8],int* best_score,int x,int y,int depth){
 //            }
 //            std::cout<<"\n";
 //        }
+//        std::cout<<"\n";
 //    }
     if(bestscore>*best_score){
         *best_score=bestscore;
@@ -1080,8 +1091,12 @@ void Board::minimax(){
     bool has_to_jump=false;
     //par promenljivih za laksu obradu
     int i,j,k,l,temp_score=-1000,score=-1000;
+    for(i=0;i<8;i++){
+        for(j=0;j<8;j++) std::cout << board_array[i][j] << ' ';
+        std::cout << '\n';
+    }
     int temp_board[8][8],optimal[8][8];
-    for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=0;
+    for(i=0;i<8;i++) for(j=0;j<8;j++) optimal[i][j]=board_array[i][j];
     //prvo gledamo moguce skokove pa ako nema pomeraje
     //za svako polje na tabeli
     for(i=0;i<8;i++){
@@ -1113,25 +1128,19 @@ void Board::minimax(){
     }
     //rekonstruisi tablu na osnovu novodobijene matrice
     //std::cout << "Stefan" << std::endl;
+    for(i=0;i<8;i++) for(j=0;j<8;j++) removePiece(pieceAt(j,i));
     for(i=0;i<8;i++){
         for(j=0;j<8;j++){
-            if(optimal[i][j]==0 && pieceAt(j,i)!=nullptr){
-                removePiece(pieceAt(i,j));
-                std::cout << "nestaje " << i << j << '\n';
-            }
-            if(optimal[i][j]!=0 && pieceAt(j,i)==nullptr){
                 if(optimal[i][j]>0){
                      pieces[piece_count++] = new Piece(player_white, j, i);
-                     std::cout << "pojavljuje beli" << i << j << '\n';
-                     if(optimal[i][j]==2) pieces[piece_count]->makeKing();
+                     //std::cout << "pojavljuje beli " << i << ' ' << j << '\n';
+                     if(optimal[i][j]==2) pieces[piece_count-1]->makeKing();
                 }
                 if(optimal[i][j]<0){
                      pieces[piece_count++] = new Piece(player_black, j, i);
-                     std::cout << "pojavljuje crni" << i << j << '\n';
-                     if(optimal[i][j]==-2) pieces[piece_count]->makeKing();
+                     //std::cout << "pojavljuje crni " << i << ' ' << j << '\n';
+                     if(optimal[i][j]==-2) pieces[piece_count-1]->makeKing();
                 }
-
-            }
             //std::cout<<" "<<optimal[i][j]<<" \n" ;
         }
     }
